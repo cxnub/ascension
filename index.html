@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FWHR & Midface Ratio Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f13;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            padding: 2.5rem 1rem 1rem;
+            max-width: 640px;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+
+        header p {
+            margin-top: 0.5rem;
+            color: #888;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        main {
+            width: 100%;
+            max-width: 640px;
+            padding: 0 1rem 3rem;
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed #333;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            margin-top: 1.5rem;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #646cff;
+            background: rgba(100, 108, 255, 0.05);
+        }
+
+        .upload-area svg {
+            width: 48px;
+            height: 48px;
+            stroke: #555;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area p {
+            color: #888;
+            font-size: 0.95rem;
+        }
+
+        .upload-area .browse {
+            color: #646cff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        #file-input { display: none; }
+
+        /* Options bar */
+        .options {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .options label {
+            font-size: 0.85rem;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+        }
+
+        .options select {
+            background: #1a1a24;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        /* Canvas result */
+        .result-section {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .result-section.visible { display: block; }
+
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #1a1a24;
+            display: flex;
+            justify-content: center;
+        }
+
+        #output-canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Result card */
+        .result-card {
+            margin-top: 1.25rem;
+            background: #1a1a24;
+            border: 1px solid #2a2a3a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .fwhr-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .fwhr-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .fwhr-details {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .fwhr-details span { color: #ccc; font-weight: 600; }
+
+        .ratio-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.25rem;
+        }
+
+        .ratio-card {
+            background: #1a1a24;
+            border: 1px solid #2a2a3a;
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .ratio-card .ratio-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .ratio-card .ratio-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .ratio-card .ratio-dims {
+            margin-top: 0.6rem;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .ratio-card .ratio-dims span { color: #ccc; font-weight: 600; }
+
+        .ratio-card .ratio-interp {
+            margin-top: 0.6rem;
+            padding: 0.5rem 0.6rem;
+            background: rgba(100, 108, 255, 0.08);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            color: #aaa;
+            line-height: 1.4;
+        }
+
+        .ratio-card.fwhr-card { border-top: 3px solid #646cff; }
+        .ratio-card.midface-card { border-top: 3px solid #00e5a0; }
+
+        .interpretation {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background: rgba(100, 108, 255, 0.08);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        /* Status / error */
+        .status {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .status.error { color: #ff6b6b; }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #444;
+            border-top-color: #646cff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Try another */
+        .reset-btn {
+            display: inline-block;
+            margin-top: 1.25rem;
+            padding: 0.6rem 1.5rem;
+            background: #646cff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover { background: #535bf2; }
+
+        footer {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Facial Width-to-Height Ratio</h1>
+    <p>Upload a front-facing photo to calculate your fWHR and midface ratio. All processing happens locally in your browser.</p>
+</header>
+
+<main>
+    <div class="upload-area" id="upload-area">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+        </svg>
+        <p>Drag &amp; drop a face photo here, or <span class="browse">browse</span></p>
+    </div>
+    <input type="file" id="file-input" accept="image/*">
+
+    <div class="options">
+        <label>
+            Top line:
+            <select id="top-method">
+                <option value="eyelid">Upper eyelid</option>
+                <option value="eyebrow">Eyebrow</option>
+            </select>
+        </label>
+        <label>
+            Averaging:
+            <select id="avg-method">
+                <option value="average">Average L/R</option>
+                <option value="left">Left only</option>
+                <option value="right">Right only</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="result-section" id="result-section">
+        <div class="canvas-wrapper">
+            <canvas id="output-canvas"></canvas>
+        </div>
+        <div class="ratio-cards">
+            <div class="ratio-card fwhr-card">
+                <div class="ratio-value" id="fwhr-value">--</div>
+                <div class="ratio-label">fWHR</div>
+                <div class="ratio-dims">
+                    <div>W: <span id="detail-width">--</span>px</div>
+                    <div>H: <span id="detail-height">--</span>px</div>
+                </div>
+                <div class="ratio-interp" id="fwhr-interp"></div>
+            </div>
+            <div class="ratio-card midface-card">
+                <div class="ratio-value" id="midface-value">--</div>
+                <div class="ratio-label">Midface Ratio</div>
+                <div class="ratio-dims">
+                    <div>IPD: <span id="midface-ipd">--</span>px</div>
+                    <div>P-Ph: <span id="midface-pph">--</span>px</div>
+                </div>
+                <div class="ratio-interp" id="midface-interp"></div>
+            </div>
+        </div>
+        <div style="text-align:center">
+            <button class="reset-btn" id="reset-btn">Try another photo</button>
+        </div>
+    </div>
+</main>
+
+<footer>
+    Powered by MediaPipe Face Mesh. No images are uploaded to any server.
+</footer>
+
+<script type="module">
+    import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs';
+
+    // ----- Elements -----
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('file-input');
+    const status = document.getElementById('status');
+    const resultSection = document.getElementById('result-section');
+    const canvas = document.getElementById('output-canvas');
+    const ctx = canvas.getContext('2d');
+    const fwhrValue = document.getElementById('fwhr-value');
+    const detailWidth = document.getElementById('detail-width');
+    const detailHeight = document.getElementById('detail-height');
+    const fwhrInterp = document.getElementById('fwhr-interp');
+    const midfaceValue = document.getElementById('midface-value');
+    const midfaceIpdEl = document.getElementById('midface-ipd');
+    const midfacePphEl = document.getElementById('midface-pph');
+    const midfaceInterp = document.getElementById('midface-interp');
+    const resetBtn = document.getElementById('reset-btn');
+    const topMethod = document.getElementById('top-method');
+    const avgMethod = document.getElementById('avg-method');
+
+    let faceLandmarker = null;
+    let currentImage = null;
+    let currentLandmarks = null;
+
+    // ----- MediaPipe Face Mesh landmark indices -----
+    // Mapped from dlib 68-point model used in the notebook to MediaPipe 468-point model
+
+    // Face contour width (bizygomatic – widest points)
+    const LEFT_FACE_EDGE = 234;
+    const RIGHT_FACE_EDGE = 454;
+
+    // Upper eyelid top points
+    const LEFT_EYELID_TOP = 159;
+    const RIGHT_EYELID_TOP = 386;
+
+    // Eyebrow top points (inner arch)
+    const LEFT_EYEBROW_TOP = 70;
+    const RIGHT_EYEBROW_TOP = 300;
+
+    // Upper lip top (vermilion border)
+    const UPPER_LIP_LEFT = 39;
+    const UPPER_LIP_CENTER = 0;
+    const UPPER_LIP_RIGHT = 269;
+
+    // For picture quality check
+    const LEFT_EYE_TOP = 159;
+    const LEFT_EYE_BOTTOM = 145;
+    const RIGHT_EYE_TOP = 386;
+    const RIGHT_EYE_BOTTOM = 374;
+    const NOSE_TIP = 4;
+    const NOSE_BRIDGE = 6;
+    const LEFT_EYE_INNER = 133;
+    const RIGHT_EYE_INNER = 362;
+
+    // ----- Initialize MediaPipe -----
+    async function initFaceLandmarker() {
+        setStatus('Loading face detection model...', false, true);
+        const vision = await FilesetResolver.forVisionTasks(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
+        );
+        faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                delegate: 'GPU'
+            },
+            runningMode: 'IMAGE',
+            numFaces: 1,
+            outputFacialTransformationMatrixes: false,
+            outputFaceBlendshapes: false,
+        });
+        setStatus('');
+    }
+
+    // ----- Status helper -----
+    function setStatus(msg, isError = false, loading = false) {
+        status.className = 'status' + (isError ? ' error' : '');
+        status.innerHTML = (loading ? '<span class="loading-spinner"></span>' : '') + msg;
+    }
+
+    // ----- Picture quality check (port of notebook logic) -----
+    function goodPictureCheck(lm, w, h) {
+        const toPixel = (p) => [p.x * w, p.y * h];
+
+        const faceLeft = toPixel(lm[LEFT_FACE_EDGE]);
+        const faceRight = toPixel(lm[RIGHT_FACE_EDGE]);
+        const widthIm = (faceRight[0] - faceLeft[0]) / 100;
+        if (widthIm <= 0) return false;
+
+        const eyeYL = (toPixel(lm[LEFT_EYE_TOP])[1] + toPixel(lm[LEFT_EYE_BOTTOM])[1]) / 2;
+        const eyeYR = (toPixel(lm[RIGHT_EYE_TOP])[1] + toPixel(lm[RIGHT_EYE_BOTTOM])[1]) / 2;
+        const eyeDif = Math.abs(eyeYR - eyeYL) / widthIm;
+
+        const noseTip = toPixel(lm[NOSE_TIP]);
+        const noseBridge = toPixel(lm[NOSE_BRIDGE]);
+        const noseDif = Math.abs(noseTip[0] - noseBridge[0]) / widthIm;
+
+        const leftSpace = toPixel(lm[LEFT_EYE_INNER])[0] - faceLeft[0];
+        const rightSpace = faceRight[0] - toPixel(lm[RIGHT_EYE_INNER])[0];
+        const spaceRatio = rightSpace > 0 ? leftSpace / rightSpace : 99;
+
+        if (eyeDif > 5 || noseDif > 3.5 || spaceRatio > 3 || spaceRatio < 0.33) {
+            return false;
+        }
+        return true;
+    }
+
+    // ----- FWHR calculation (port of notebook logic) -----
+    function computeFWHR(lm, w, h, top, method) {
+        const px = (p) => [p.x * w, p.y * h];
+
+        const widthLeft = px(lm[LEFT_FACE_EDGE]);
+        const widthRight = px(lm[RIGHT_FACE_EDGE]);
+
+        let topLeft, topRight;
+        if (top === 'eyebrow') {
+            topLeft = px(lm[LEFT_EYEBROW_TOP]);
+            topRight = px(lm[RIGHT_EYEBROW_TOP]);
+        } else {
+            topLeft = px(lm[LEFT_EYELID_TOP]);
+            topRight = px(lm[RIGHT_EYELID_TOP]);
+        }
+
+        const bottomLeft = px(lm[UPPER_LIP_LEFT]);
+        const bottomRight = px(lm[UPPER_LIP_RIGHT]);
+
+        let topY, bottomY;
+        if (method === 'left') {
+            topY = topLeft[1];
+            bottomY = bottomLeft[1];
+        } else if (method === 'right') {
+            topY = topRight[1];
+            bottomY = bottomRight[1];
+        } else {
+            topY = (topLeft[1] + topRight[1]) / 2;
+            bottomY = (bottomLeft[1] + bottomRight[1]) / 2;
+        }
+
+        // Small offset above eyelid (matches notebook)
+        if (top === 'eyelid') {
+            topY -= 4 * (h / 500);
+        }
+
+        const corners = {
+            top_left: [widthLeft[0], topY],
+            top_right: [widthRight[0], topY],
+            bottom_left: [widthLeft[0], bottomY],
+            bottom_right: [widthRight[0], bottomY],
+        };
+
+        const faceWidth = corners.top_right[0] - corners.top_left[0];
+        const faceHeight = corners.bottom_left[1] - corners.top_left[1];
+        const ratio = faceWidth / faceHeight;
+
+        return { ratio, corners, faceWidth, faceHeight };
+    }
+
+    // ----- Midface ratio calculation -----
+    // IPD (interpupillary distance) / pupil-to-philtrum distance
+    // Pupil centers approximated from eye landmark midpoints
+    const LEFT_EYE_OUTER = 33;
+    const RIGHT_EYE_OUTER = 263;
+
+    function computeMidfaceRatio(lm, w, h) {
+        const px = (p) => [p.x * w, p.y * h];
+
+        // Pupil centers (average of inner/outer corners for X, top/bottom for Y)
+        const leftPupil = [
+            (px(lm[LEFT_EYE_INNER])[0] + px(lm[LEFT_EYE_OUTER])[0]) / 2,
+            (px(lm[LEFT_EYE_TOP])[1] + px(lm[LEFT_EYE_BOTTOM])[1]) / 2,
+        ];
+        const rightPupil = [
+            (px(lm[RIGHT_EYE_INNER])[0] + px(lm[RIGHT_EYE_OUTER])[0]) / 2,
+            (px(lm[RIGHT_EYE_TOP])[1] + px(lm[RIGHT_EYE_BOTTOM])[1]) / 2,
+        ];
+
+        // Interpupillary distance
+        const ipd = Math.hypot(rightPupil[0] - leftPupil[0], rightPupil[1] - leftPupil[1]);
+
+        // Upper lip (vermilion border)
+        const upperLip = px(lm[UPPER_LIP_CENTER]);
+
+        // Pupil-to-upper-lip: vertical distance from pupil line to upper lip
+        const midPupilY = (leftPupil[1] + rightPupil[1]) / 2;
+        const pupilToPhiltrum = upperLip[1] - midPupilY;
+
+        const ratio = ipd / pupilToPhiltrum;
+
+        const midPupilX = (leftPupil[0] + rightPupil[0]) / 2;
+
+        const vizPoints = {
+            leftPupil,
+            rightPupil,
+            upperLip,
+            midPupilX,
+            midPupilY,
+        };
+
+        return { ratio, vizPoints, ipd, pupilToPhiltrum };
+    }
+
+    // ----- Draw result -----
+    function drawResult(img, fwhrCorners, midfaceViz) {
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+
+        const lineWidth = Math.ceil(img.naturalHeight / 150);
+
+        // --- fWHR box (purple) ---
+        ctx.strokeStyle = '#646cff';
+        ctx.lineWidth = lineWidth;
+        ctx.setLineDash([]);
+
+        const tl = fwhrCorners.top_left;
+        const tr = fwhrCorners.top_right;
+        const bl = fwhrCorners.bottom_left;
+        const br = fwhrCorners.bottom_right;
+
+        ctx.beginPath();
+        ctx.moveTo(tl[0], tl[1]);
+        ctx.lineTo(tr[0], tr[1]);
+        ctx.lineTo(br[0], br[1]);
+        ctx.lineTo(bl[0], bl[1]);
+        ctx.closePath();
+        ctx.stroke();
+
+        // fWHR width line (dashed, cyan)
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = lineWidth * 0.7;
+        ctx.setLineDash([lineWidth * 2, lineWidth * 2]);
+        const midY = (tl[1] + bl[1]) / 2;
+        ctx.beginPath();
+        ctx.moveTo(tl[0], midY);
+        ctx.lineTo(tr[0], midY);
+        ctx.stroke();
+
+        // fWHR height line (dashed, orange)
+        ctx.strokeStyle = '#ff9100';
+        ctx.setLineDash([lineWidth * 2, lineWidth * 2]);
+        const midX = (tl[0] + tr[0]) / 2;
+        ctx.beginPath();
+        ctx.moveTo(midX, tl[1]);
+        ctx.lineTo(midX, bl[1]);
+        ctx.stroke();
+
+        // --- Midface: IPD line (green solid) ---
+        const vp = midfaceViz;
+        ctx.strokeStyle = '#00e5a0';
+        ctx.lineWidth = lineWidth;
+        ctx.setLineDash([]);
+
+        // IPD line between pupils
+        ctx.beginPath();
+        ctx.moveTo(vp.leftPupil[0], vp.leftPupil[1]);
+        ctx.lineTo(vp.rightPupil[0], vp.rightPupil[1]);
+        ctx.stroke();
+
+        // Pupil dots
+        const dotR = lineWidth * 1.5;
+        ctx.fillStyle = '#00e5a0';
+        ctx.beginPath();
+        ctx.arc(vp.leftPupil[0], vp.leftPupil[1], dotR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(vp.rightPupil[0], vp.rightPupil[1], dotR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Upper lip dot
+        ctx.fillStyle = '#ff6b9d';
+        ctx.beginPath();
+        ctx.arc(vp.upperLip[0], vp.upperLip[1], dotR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vertical line from pupil midpoint to upper lip (green dashed)
+        ctx.strokeStyle = '#00e5a0';
+        ctx.lineWidth = lineWidth * 0.7;
+        ctx.setLineDash([lineWidth * 2, lineWidth * 2]);
+
+        ctx.beginPath();
+        ctx.moveTo(vp.midPupilX, vp.midPupilY);
+        ctx.lineTo(vp.midPupilX, vp.upperLip[1]);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    }
+
+    function getFwhrInterpretation(ratio) {
+        if (ratio < 1.6) {
+            return 'Below average. Narrower face relative to height.';
+        } else if (ratio < 1.8) {
+            return 'Near the population average (~1.7-1.8).';
+        } else if (ratio < 2.1) {
+            return 'Above average. Wider face relative to height.';
+        } else {
+            return 'Well above average. Very wide face relative to height.';
+        }
+    }
+
+    function getMidfaceInterpretation(ratio) {
+        if (ratio < 0.85) {
+            return 'Long midface. Pupil-to-philtrum distance exceeds IPD.';
+        } else if (ratio < 0.95) {
+            return 'Slightly long midface.';
+        } else if (ratio < 1.05) {
+            return 'Near ideal ratio (~1.0). Balanced midface proportions.';
+        } else if (ratio < 1.15) {
+            return 'Short/compact midface. Currently favored in aesthetic standards.';
+        } else {
+            return 'Very compact midface. IPD well exceeds pupil-to-philtrum distance.';
+        }
+    }
+
+    // ----- Process image -----
+    async function processImage(img) {
+        if (!faceLandmarker) {
+            await initFaceLandmarker();
+        }
+
+        setStatus('Detecting face landmarks...', false, true);
+
+        const result = faceLandmarker.detect(img);
+
+        if (!result.faceLandmarks || result.faceLandmarks.length === 0) {
+            setStatus('No face detected. Please use a clear, front-facing photo.', true);
+            return;
+        }
+
+        const lm = result.faceLandmarks[0];
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        currentLandmarks = lm;
+
+        if (!goodPictureCheck(lm, w, h)) {
+            setStatus('Face appears to be at an angle. For best results, use a front-facing photo. Calculating anyway...', true);
+        } else {
+            setStatus('');
+        }
+
+        recalculate(img, lm, w, h);
+    }
+
+    function recalculate(img, lm, w, h) {
+        const top = topMethod.value;
+        const method = avgMethod.value;
+
+        const fwhr = computeFWHR(lm, w, h, top, method);
+        const midface = computeMidfaceRatio(lm, w, h);
+
+        if (fwhr.faceHeight <= 0 || !isFinite(fwhr.ratio)) {
+            setStatus('Could not compute ratio. Try a different photo.', true);
+            return;
+        }
+
+        drawResult(img, fwhr.corners, midface.vizPoints);
+
+        // fWHR card
+        fwhrValue.textContent = fwhr.ratio.toFixed(2);
+        detailWidth.textContent = Math.round(fwhr.faceWidth);
+        detailHeight.textContent = Math.round(fwhr.faceHeight);
+        fwhrInterp.textContent = getFwhrInterpretation(fwhr.ratio);
+
+        // Midface card
+        midfaceValue.textContent = midface.ratio.toFixed(2);
+        midfaceIpdEl.textContent = Math.round(midface.ipd);
+        midfacePphEl.textContent = Math.round(midface.pupilToPhiltrum);
+        midfaceInterp.textContent = getMidfaceInterpretation(midface.ratio);
+
+        resultSection.classList.add('visible');
+        uploadArea.style.display = 'none';
+    }
+
+    // ----- File handling -----
+    function handleFile(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            setStatus('Please select an image file.', true);
+            return;
+        }
+
+        resultSection.classList.remove('visible');
+
+        const img = new Image();
+        img.onload = () => {
+            currentImage = img;
+            processImage(img);
+        };
+        img.onerror = () => setStatus('Failed to load image.', true);
+        img.src = URL.createObjectURL(file);
+    }
+
+    // ----- Event listeners -----
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+
+    resetBtn.addEventListener('click', () => {
+        resultSection.classList.remove('visible');
+        uploadArea.style.display = '';
+        fileInput.value = '';
+        setStatus('');
+        currentImage = null;
+        currentLandmarks = null;
+    });
+
+    // Recalculate when options change
+    topMethod.addEventListener('change', () => {
+        if (currentImage && currentLandmarks) {
+            recalculate(currentImage, currentLandmarks, currentImage.naturalWidth, currentImage.naturalHeight);
+        }
+    });
+
+    avgMethod.addEventListener('change', () => {
+        if (currentImage && currentLandmarks) {
+            recalculate(currentImage, currentLandmarks, currentImage.naturalWidth, currentImage.naturalHeight);
+        }
+    });
+
+    // Pre-load model
+    initFaceLandmarker();
+</script>
+
+</body>
+</html>
