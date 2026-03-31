@@ -400,6 +400,8 @@
     const LEFT_EYE_INNER = 133;
     const RIGHT_EYE_INNER = 362;
 
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
     // ----- Initialize MediaPipe -----
     async function initFaceLandmarker() {
         setStatus('Loading face detection model...', false, true);
@@ -409,7 +411,7 @@
         faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
             baseOptions: {
                 modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-                delegate: 'GPU'
+                delegate: isMobile ? 'CPU' : 'GPU'
             },
             runningMode: 'IMAGE',
             numFaces: 1,
